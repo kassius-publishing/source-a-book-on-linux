@@ -1,0 +1,43 @@
+container:
+  image: archlinux:latest
+  cpu: 2
+  memory: 2G
+  options: --user root
+
+build_and_publish_task:
+  auto_cancellation: $CIRRUS_CHANGE_TITLE == 'auto from cirrus-ci'
+  environment:
+    DEPLOY_KEY: ENCRYPTED[!a4464481985a73c3f6c3cebbd6a55c1bda79ed8bcfa66fbf547c094361fb146aff8453b2f5510e6d68c5a63440d11f45!]
+  prepare_archlinux_script:
+    - pacman -Syu --noconfirm
+    - pacman -Fy
+    - echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+    - echo 'LANG=en_US.UTF-8' > /etc/locale.conf        
+    - locale-gen
+    - pacman-key --init
+    - pacman -Syu --noconfirm git mdbook openssh
+  prepare_ssh_script:
+    - mkdir -p ~/.ssh/
+    - echo -e "${DEPLOY_KEY}" > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - echo 'Host github.com'                  >  ~/.ssh/config
+    - echo '  HostName github.com'            >> ~/.ssh/config
+    - echo '  User git'                       >> ~/.ssh/config
+    - echo '  IdentityFile ~/.ssh/deploy_key' >> ~/.ssh/config
+    - ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
+  prepare_git_script:
+    - git config --global push.default matching
+    - git config --global user.email "iacchus@users.noreply.github.com"
+    - git config --global user.name "I.M. - Cirrus-CI"
+    #- rm -rf .git/
+  ptbr_build_script:
+    - cd pt-BR/
+    - mdbook clean
+    - mdbook build
+  ptbr_publish_script:
+    - cd pt-BR/docs/
+    - git init
+    - git remote add origin git@github.com:kassius-publishing/um_livro_de_linux.git
+    - git add .
+    - git commit -a -m 'auto from cirrus-ci'
+    - git push --force -u origin master
