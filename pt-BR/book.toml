@@ -1,0 +1,13 @@
+[book]
+authors = ["Kassius Mercurius"]
+language = "pt"
+multilingual = false
+src = "src"
+title = "Um Livro de Linux"
+
+[build]
+build-dir = "docs/"
+create-missing = false
+
+[output.html]
+site-url = "/um_livro_de_linux/"
